@@ -30,7 +30,7 @@ class BookRequest(BaseModel):
     author: str = Field(..., min_length=3)
     category: str  = Field(..., min_length=1, max_length=100)
     description: str = Field(min_length=1, max_length=100)
-    rating: int = Field(ge=0, le=6)
+    rating: int = Field(ge=0, le=6) 
 
     
 # a list of books
