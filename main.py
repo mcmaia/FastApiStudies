@@ -1,8 +1,8 @@
+from typing import Optional
+from datetime import datetime
+
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
-
-from typing import Optional
-
 
 app = FastAPI()
 
@@ -14,28 +14,43 @@ class Book:
     category: str
     description: str
     rating: int
-    
-    def __init__(self, id, title, author, category, description, rating):
+    published_year: int
+    def __init__(self, id, title, author, category, description, rating, published_year=None):
         self.id = id
         self.title = title
         self.author = author
         self.category = category
         self.description = description
         self.rating = rating
+        self.published_year = published_year    
 
 # a class to get the book request       
 class BookRequest(BaseModel):
-    id: Optional[int] = None
+    id: Optional[int] = Field(default=None, title="The ID of the book", description="This ID is automatically generated")
     title: str = Field(..., min_length=3)
     author: str = Field(..., min_length=3)
     category: str  = Field(..., min_length=1, max_length=100)
     description: str = Field(min_length=1, max_length=100)
+    published_year: Optional[int] = Field(default=None, le=datetime.now().year)
     rating: int = Field(ge=0, le=6) 
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "title": "A new book",
+                "author": "add the author name",
+                "category": "add the category",
+                "description": "add the description",
+                "rating": 4,
+                "published_year": 2023
+            }
+        }
+            
 
     
 # a list of books
 BOOKS = [
-    Book(1, "The Catcher in the Rye", "J.D. Salinger", "Fiction", "A classic novel about teenage angst", 4),
+    Book(1, "The Catcher in the Rye", "J.D. Salinger", "Fiction", "A classic novel about teenage angst", 4, 1951),
     Book(2, "To Kill a Mockingbird", "Harper Lee", "Fiction", "A story of racial injustice in the American South", 5),
     Book(3, "1984", "George Orwell", "Science Fiction", "A dystopian novel set in a totalitarian society", 4),
     Book(4, "The Great Gatsby", "F. Scott Fitzgerald", "Fiction", "A tale of the Jazz Age and the American Dream", 4),
@@ -46,6 +61,31 @@ BOOKS = [
 @app.get("/books")
 async def read_all_books():
     return BOOKS
+
+
+@app.get("/books/{book_id}")
+async def read_book(book_id: int):
+    for book in BOOKS:
+        if book.id == book_id:
+            return book
+    return {"error": "Book not found"}
+
+@app.get("/books/")
+async def read_book_by_rating(book_rating: int):
+    book_to_return = []
+    for book in BOOKS:
+        if book.rating == book_rating:
+             book_to_return.append(book)
+    return book_to_return
+
+@app.get("/books/published-year/")
+async def book_by_year(published_year: int):
+    book_to_return = []
+    for book in BOOKS:
+        if book.published_year == published_year:
+            book_to_return.append(book)
+    return book_to_return
+   
 
 # a function to get a book by id
 @app.post("/create-book")
@@ -58,3 +98,19 @@ async def create_book(book_request: BookRequest):
 def automate_book_id(book: Book):
     book.id = 1 if len(BOOKS) == 0 else BOOKS[-1].id + 1
     return book
+
+@app.put("/books/update_book")
+async def update_book(book: BookRequest):
+    for i in range(len(BOOKS)):
+        if BOOKS[i].id == book.id:
+            BOOKS[i] = book
+            return book
+
+      
+@app.delete("/books/{book_id}") 
+async def delete_book(book_id: int):
+    for i in range(len(BOOKS)):
+        if BOOKS[i].id == book_id:
+            BOOKS.pop(i)
+            return {"message": "Book with id: {} deleted successfully".format(book_id)}
+    return {"error": "Book not found"}
