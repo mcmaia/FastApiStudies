@@ -15,11 +15,36 @@ To initiate SQLite in the terminal, follow these steps:
 1. Open your terminal or command prompt.
 2. Navigate to the directory where your SQLite database file is located.
 3. Run the following command to start the SQLite terminal:
+
 3.1. To initiate the db
 ```
 $ sqlite3 to-dos.db
 ```
+
+
 3.2. To check the tables 
 ```
-.schema
+sqlite3> .schema
+```
+
+isert the data into the table:
+
+```sql
+-- Insert sample data
+INSERT INTO todos (id, title, description, priority, complete) 
+VALUES 
+    (1, 'Example Todo 1', 'Description for Todo 1', 1, false),
+    (2, 'Example Todo 2', 'Description for Todo 2', 2, true),
+    (3, 'Example Todo 3', 'Description for Todo 3', 3, false);
+
+```
+Then, run the Query below, to see the data added:
+
+```sql
+select * from todo;
+```
+
+For better visualization use:
+```
+$ .mode box
 ```
