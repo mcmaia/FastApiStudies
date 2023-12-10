@@ -27,7 +27,7 @@ $ sqlite3 to-dos.db
 sqlite3> .schema
 ```
 
-isert the data into the table:
+4. isert the data into the table:
 
 ```sql
 -- Insert sample data
@@ -38,13 +38,13 @@ VALUES
     (3, 'Example Todo 3', 'Description for Todo 3', 3, false);
 
 ```
-Then, run the Query below, to see the data added:
+5. Then, run the Query below, to see the data added:
 
 ```sql
 select * from todo;
 ```
 
-For better visualization use:
+5.1. For better visualization use:
 ```
 $ .mode box
 ```
