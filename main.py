@@ -1,7 +1,8 @@
 from typing import Optional
 from datetime import datetime
 
-from fastapi import FastAPI
+#validate Path parameters
+from fastapi import FastAPI, Path, Query
 from pydantic import BaseModel, Field
 
 app = FastAPI()
@@ -15,6 +16,7 @@ class Book:
     description: str
     rating: int
     published_year: int
+    
     def __init__(self, id, title, author, category, description, rating, published_year=None):
         self.id = id
         self.title = title
@@ -32,7 +34,7 @@ class BookRequest(BaseModel):
     category: str  = Field(..., min_length=1, max_length=100)
     description: str = Field(min_length=1, max_length=100)
     published_year: Optional[int] = Field(default=None, le=datetime.now().year)
-    rating: int = Field(ge=0, le=6) 
+    rating: int = Field(ge=0, le=6) #between 1 and 5
     
     class Config:
         json_schema_extra = {
@@ -63,23 +65,27 @@ async def read_all_books():
     return BOOKS
 
 
+#Path(gt=0) means that the book_id must be greater than 0 only for this endpoint
 @app.get("/books/{book_id}")
-async def read_book(book_id: int):
+async def read_book(book_id: int = Path(gt=0)):
     for book in BOOKS:
         if book.id == book_id:
             return book
     return {"error": "Book not found"}
 
+
+#Query(gt=0, le=5) means that the book_rating must be greater than 0 and less than or equal to 5 only for this endpoint
 @app.get("/books/")
-async def read_book_by_rating(book_rating: int):
+async def read_book_by_rating(book_rating: int = Query(gt=0, le=5)):
     book_to_return = []
     for book in BOOKS:
         if book.rating == book_rating:
              book_to_return.append(book)
     return book_to_return
 
+
 @app.get("/books/published-year/")
-async def book_by_year(published_year: int):
+async def book_by_year(published_year: int = Query(le=datetime.now().year)):
     book_to_return = []
     for book in BOOKS:
         if book.published_year == published_year:
@@ -94,10 +100,12 @@ async def create_book(book_request: BookRequest):
     BOOKS.append(automate_book_id(new_book))
     return book_request
 
+
 #a function to automate the book id
 def automate_book_id(book: Book):
     book.id = 1 if len(BOOKS) == 0 else BOOKS[-1].id + 1
     return book
+
 
 @app.put("/books/update_book")
 async def update_book(book: BookRequest):
@@ -108,9 +116,10 @@ async def update_book(book: BookRequest):
 
       
 @app.delete("/books/{book_id}") 
-async def delete_book(book_id: int):
+async def delete_book(book_id: int = Path(gt=0)):
     for i in range(len(BOOKS)):
         if BOOKS[i].id == book_id:
             BOOKS.pop(i)
-            return {"message": "Book with id: {} deleted successfully".format(book_id)}
-    return {"error": "Book not found"}
+            break
+        #return {"message": "Book with id: {} deleted successfully".format(book_id)}
+      
