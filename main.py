@@ -2,7 +2,7 @@ from typing import Optional
 from datetime import datetime
 
 #validate Path parameters
-from fastapi import FastAPI, Path, Query
+from fastapi import FastAPI, Path, Query, HTTPException
 from pydantic import BaseModel, Field
 
 app = FastAPI()
@@ -34,7 +34,7 @@ class BookRequest(BaseModel):
     category: str  = Field(..., min_length=1, max_length=100)
     description: str = Field(min_length=1, max_length=100)
     published_year: Optional[int] = Field(default=None, le=datetime.now().year)
-    rating: int = Field(ge=0, le=6) #between 1 and 5
+    rating: int = Field(ge=0, le=5) #between 1 and 5
     
     class Config:
         json_schema_extra = {
@@ -71,7 +71,7 @@ async def read_book(book_id: int = Path(gt=0)):
     for book in BOOKS:
         if book.id == book_id:
             return book
-    return {"error": "Book not found"}
+    raise HTTPException(status_code=404, detail="Book not found")
 
 
 #Query(gt=0, le=5) means that the book_rating must be greater than 0 and less than or equal to 5 only for this endpoint
@@ -109,17 +109,24 @@ def automate_book_id(book: Book):
 
 @app.put("/books/update_book")
 async def update_book(book: BookRequest):
+    book_changed = False
     for i in range(len(BOOKS)):
         if BOOKS[i].id == book.id:
             BOOKS[i] = book
+            book_changed = True
             return book
+    if not book_changed:
+        raise HTTPException(status_code=404, detail="Book not found")
 
       
 @app.delete("/books/{book_id}") 
 async def delete_book(book_id: int = Path(gt=0)):
+    book_changed = False
     for i in range(len(BOOKS)):
         if BOOKS[i].id == book_id:
             BOOKS.pop(i)
-            break
-        #return {"message": "Book with id: {} deleted successfully".format(book_id)}
+            book_changed = True
+            raise HTTPException(status_code=200, detail="Book with id: {} was deleted".format(book_id))
+    if not book_changed:
+        raise HTTPException(status_code=404, detail="Book with id: {} was not found".format(book_id))
       
