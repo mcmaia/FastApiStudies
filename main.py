@@ -4,6 +4,7 @@ from datetime import datetime
 #validate Path parameters
 from fastapi import FastAPI, Path, Query, HTTPException
 from pydantic import BaseModel, Field
+from starlette import status
 
 app = FastAPI()
 
@@ -60,13 +61,13 @@ BOOKS = [
 ]
 
 # a function to get all books
-@app.get("/books")
+@app.get("/books", status_code=status.HTTP_200_OK)
 async def read_all_books():
     return BOOKS
 
 
 #Path(gt=0) means that the book_id must be greater than 0 only for this endpoint
-@app.get("/books/{book_id}")
+@app.get("/books/{book_id}", status_code=status.HTTP_200_OK)
 async def read_book(book_id: int = Path(gt=0)):
     for book in BOOKS:
         if book.id == book_id:
@@ -75,7 +76,7 @@ async def read_book(book_id: int = Path(gt=0)):
 
 
 #Query(gt=0, le=5) means that the book_rating must be greater than 0 and less than or equal to 5 only for this endpoint
-@app.get("/books/")
+@app.get("/books/", status_code=status.HTTP_200_OK)
 async def read_book_by_rating(book_rating: int = Query(gt=0, le=5)):
     book_to_return = []
     for book in BOOKS:
@@ -84,7 +85,7 @@ async def read_book_by_rating(book_rating: int = Query(gt=0, le=5)):
     return book_to_return
 
 
-@app.get("/books/published-year/")
+@app.get("/books/published-year/", status_code=status.HTTP_200_OK)
 async def book_by_year(published_year: int = Query(le=datetime.now().year)):
     book_to_return = []
     for book in BOOKS:
@@ -94,7 +95,7 @@ async def book_by_year(published_year: int = Query(le=datetime.now().year)):
    
 
 # a function to get a book by id
-@app.post("/create-book")
+@app.post("/create-book", status_code=status.HTTP_201_CREATED) # 201 means that the something was created
 async def create_book(book_request: BookRequest):
     new_book = Book(**book_request.model_dump())
     BOOKS.append(automate_book_id(new_book))
@@ -107,7 +108,7 @@ def automate_book_id(book: Book):
     return book
 
 
-@app.put("/books/update_book")
+@app.put("/books/update_book", status_code=status.HTTP_204_NO_CONTENT) # 204 means that the something was updated but a response is not needed
 async def update_book(book: BookRequest):
     book_changed = False
     for i in range(len(BOOKS)):
@@ -119,14 +120,15 @@ async def update_book(book: BookRequest):
         raise HTTPException(status_code=404, detail="Book not found")
 
       
-@app.delete("/books/{book_id}") 
+@app.delete("/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT ) 
 async def delete_book(book_id: int = Path(gt=0)):
     book_changed = False
     for i in range(len(BOOKS)):
         if BOOKS[i].id == book_id:
             BOOKS.pop(i)
             book_changed = True
-            raise HTTPException(status_code=200, detail="Book with id: {} was deleted".format(book_id))
+            break
+            #raise HTTPException(status_code=200, detail="Book with id: {} was deleted".format(book_id))
     if not book_changed:
         raise HTTPException(status_code=404, detail="Book with id: {} was not found".format(book_id))
       
