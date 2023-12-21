@@ -1,20 +1,30 @@
+from datetime import datetime, timedelta
 from typing import Annotated # for dependency injection
-from fastapi import APIRouter, Depends, HTTPException # for router and dependency injection
+from fastapi import APIRouter, Depends, HTTPException # for router and dependency injection, raise exception
 from pydantic import BaseModel
-from database import SessionLocal
+from database import SessionLocal # get database
 from models import Users
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session 
 from starlette import status # for status code
-from fastapi.security import OAuth2PasswordRequestForm # form to get username and password
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer # form to get username and password, decode JWT token
+from jose import jwt, JWSError # JWT token library
 
 
-router = APIRouter()
+router = APIRouter(
+    prefix='/auth',
+    tags=['Auth']
+)
 
-bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
+SECRET_KEY = 'your_secret_key'
+ALGORITHM = 'algorithm here' # algorithm to encode JWT token
 
-class CreateUserRequest(BaseModel):
+bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto') # hash password
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token') # get token from url to authenticate user
+
+# request model to create user
+class CreateUserRequest(BaseModel): 
     username: str
     email: str 
     first_name: str
@@ -22,7 +32,12 @@ class CreateUserRequest(BaseModel):
     password: str
     role: str
     
-
+# response model to return token
+class token(BaseModel): 
+    access_token: str
+    token_type: str
+    
+# function to get database
 def get_db():
     db = SessionLocal()
     try:
@@ -30,7 +45,7 @@ def get_db():
     finally:
         db.close()
         
-        
+# dependency injection to get database        
 db_dependency = Annotated[Session, Depends(get_db)]
 
 #function to authenticate user
@@ -40,10 +55,37 @@ def authenticate_user(username: str, password: str, db):
         return False
     if not bcrypt_context.verify(password, user.hashed_password):
         return False
-    return True
-    
+    return user
 
-@router.post('/auth/', status_code=status.HTTP_201_CREATED)
+# function to create JWT token
+def create_access_token(username: str, user_id: int, expires_delta: timedelta):
+    encode = {'sub': username, 'id': user_id}
+    expires = datetime.utcnow() + expires_delta
+    encode.update({'exp': expires})
+    encoded_jwt = jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+# verify the current user, it provides security to the endpoints
+async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail='Could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'}
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get('sub')
+        user_id: int = payload.get('id')
+        if username is None or user_id is None:
+            raise credentials_exception
+        return {'username': username, 'id': user_id}
+    except JWSError:
+        raise credentials_exception
+
+    
+#Endpoints
+# endpoint to create user
+@router.post('/', status_code=status.HTTP_201_CREATED)
 async def create_user(db: db_dependency,
                       create_user_request: CreateUserRequest):
     create_user_model = Users(
@@ -60,12 +102,18 @@ async def create_user(db: db_dependency,
     db.commit()
     db.refresh(create_user_model)
 
-
-@router.post("/token")
+# endpoint to get token
+@router.post("/token", response_model=token)
 async def login_for_access_token(form_data: Annotated[ OAuth2PasswordRequestForm, Depends()], 
                                  db: db_dependency):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail='Could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'})
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
-       return 'Failed to authenticate user'
-    return 'Suceessfully authenticated user'
+       raise credentials_exception
+    token = create_access_token(user.username, user.id, timedelta(minutes=20))
+                                
+    return {'access_token': token, 'token_type': 'bearer'}
         
