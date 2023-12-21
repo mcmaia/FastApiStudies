@@ -48,3 +48,17 @@ select * from todo;
 ```
 $ .mode box
 ```
+
+## Creating a random secret key
+
+
+Here's how you can add the instructions to generate a random secret key using OpenSSL in the terminal to your README.md file:
+
+6. To generate a random secret key, you can use OpenSSL in the terminal. Run the following command:
+
+```bash
+$ openssl rand -hex 32
+
+This will output a 32-byte secret key, encoded as a hexadecimal string. You can use this key for various purposes, such as encrypting data or signing tokens.
+
+```
