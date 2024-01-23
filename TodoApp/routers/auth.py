@@ -18,7 +18,7 @@ router = APIRouter(
 
 
 SECRET_KEY = 'your_secret_key'
-ALGORITHM = 'algorithm here' # algorithm to encode JWT token
+ALGORITHM = "HS256" # algorithm to encode JWT token
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto') # hash password
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token') # get token from url to authenticate user
@@ -58,8 +58,8 @@ def authenticate_user(username: str, password: str, db):
     return user
 
 # function to create JWT token
-def create_access_token(username: str, user_id: int, expires_delta: timedelta):
-    encode = {'sub': username, 'id': user_id}
+def create_access_token(username: str, user_id: int, role: str, expires_delta: timedelta):
+    encode = {'sub': username, 'id': user_id, 'role': role}
     expires = datetime.utcnow() + expires_delta
     encode.update({'exp': expires})
     encoded_jwt = jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -74,11 +74,12 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get('sub')
-        user_id: int = payload.get('id')
+        username: str = payload.get('sub') # type: ignore
+        user_id: int = payload.get('id') # type: ignore
+        user_role: str = payload.get('role') # type: ignore
         if username is None or user_id is None:
             raise credentials_exception
-        return {'username': username, 'id': user_id}
+        return {'username': username, 'id': user_id, 'user_role': user_role}
     except JWSError:
         raise credentials_exception
 
@@ -113,7 +114,7 @@ async def login_for_access_token(form_data: Annotated[ OAuth2PasswordRequestForm
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
        raise credentials_exception
-    token = create_access_token(user.username, user.id, timedelta(minutes=20))
+    token = create_access_token(user.username, user.id, user.role, timedelta(minutes=20))
                                 
     return {'access_token': token, 'token_type': 'bearer'}
         
