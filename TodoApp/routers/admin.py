@@ -1,6 +1,5 @@
 from typing import Annotated
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
 
 from fastapi import Depends, HTTPException, Path, APIRouter
 from models import Todos
