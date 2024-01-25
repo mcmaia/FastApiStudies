@@ -9,6 +9,10 @@ from sqlalchemy.orm import Session
 from starlette import status # for status code
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer # form to get username and password, decode JWT token
 from jose import jwt, JWSError # JWT token library
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 router = APIRouter(
@@ -17,8 +21,8 @@ router = APIRouter(
 )
 
 
-SECRET_KEY = 'your_secret_key'
-ALGORITHM = "HS256" # algorithm to encode JWT token
+SECRET_KEY=os.getenv("AUTH_SECRET_KEY")
+ALGORITHM=os.getenv("ALGORITHM") # algorithm to encode JWT token
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto') # hash password
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token') # get token from url to authenticate user
