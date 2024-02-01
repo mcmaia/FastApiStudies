@@ -2,7 +2,7 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
-from fastapi import Depends, HTTPException, APIRouter
+from fastapi import Depends, HTTPException, APIRouter, Path
 from models import Users
 from database import SessionLocal
 from starlette import status
@@ -31,6 +31,11 @@ class UserRequest(BaseModel):
    password: str
    new_password: str = Field(min_length=6)
 
+class UserRequestGeneralInfo(BaseModel):
+    first_name: str
+    last_name: str
+    phone_number: str
+
 @router.get("/", status_code=status.HTTP_200_OK)
 async def get_users(user: user_dependency, db: db_dependency):
     if user is None:
@@ -53,4 +58,17 @@ async def change_password(user: user_dependency, db: db_dependency, user_request
 
     db.add(user_model)
     db.commit() 
-         
+
+@router.put('/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def update_user_by_id(user: user_dependency, db: db_dependency, user_request: UserRequestGeneralInfo):
+    if user is None:
+        raise HTTPException(status_code=401, detail='Authentication Failed')
+    
+    user_model = db.query(Users).filter(Users.id == user.get('id') ).first()
+  
+    user_model.first_name = user_request.first_name # type: ignore
+    user_model.last_name = user_request.last_name # type: ignore
+    user_model.phone_number = user_request.phone_number # type: ignore
+
+    db.add(user_model)
+    db.commit() 
