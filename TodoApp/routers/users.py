@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
 from fastapi import Depends, HTTPException, APIRouter, Path
-from models import Users
-from database import SessionLocal
+from ..models import Users
+from ..database import SessionLocal
 from starlette import status
 from .auth import get_current_user
 from passlib.context import CryptContext
@@ -58,6 +58,7 @@ async def change_password(user: user_dependency, db: db_dependency, user_request
 
     db.add(user_model)
     db.commit() 
+    
 
 @router.put('/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def update_user_by_id(user: user_dependency, db: db_dependency, user_request: UserRequestGeneralInfo):

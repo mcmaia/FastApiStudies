@@ -3,3 +3,6 @@ __pycache__
 venv
 to-dos.db
 .env
+alembic
+alembic.ini
+.vscode
