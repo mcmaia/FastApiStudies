@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
 from fastapi import Depends, HTTPException, Path, APIRouter, Request
-from ..models import Todos
+from ..models import Todos, Base
 from starlette import status
 from .auth import get_current_user
 from ..database import engine, SessionLocal
@@ -16,7 +16,7 @@ router = APIRouter(
     tags=['To-dos']
 )
 
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 # templates = Jinja2Templates(directory="TodoApp/routers/templates")
 
