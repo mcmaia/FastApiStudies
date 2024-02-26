@@ -15,10 +15,10 @@ load_dotenv()
 
 PSQL_PASSWORD=os.getenv("PSQL_PASSWORD")
 HOST=os.getenv("HOST")
-# DATABASE=os.getenv("DATABASE")
+TEST_DATABASE=os.getenv("TEST_DATABASE")
 
 
-SQLALCHEMY_DATABASE_URL = f'postgresql://postgres:{PSQL_PASSWORD}@{HOST}:5432/TestTodoAppDatabase'
+SQLALCHEMY_DATABASE_URL = f'postgresql://postgres:{PSQL_PASSWORD}@{HOST}:5432/{TEST_DATABASE}'
 print(SQLALCHEMY_DATABASE_URL)
 
 engine = create_engine(
