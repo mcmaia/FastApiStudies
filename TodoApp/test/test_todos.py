@@ -1,12 +1,14 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 from fastapi import status
+import pytest
 
 from ..routers.todos import get_db, get_current_user
 from ..database import Base
 from ..main import app
+from ..models import Todos
 
 import os
 from dotenv import load_dotenv
@@ -15,10 +17,10 @@ load_dotenv()
 
 PSQL_PASSWORD=os.getenv("PSQL_PASSWORD")
 HOST=os.getenv("HOST")
-TEST_DATABASE=os.getenv("TEST_DATABASE")
+STAGING_DATABASE=os.getenv("STAGING_DATABASE")
 
 
-SQLALCHEMY_DATABASE_URL = f'postgresql://postgres:{PSQL_PASSWORD}@{HOST}:5432/{TEST_DATABASE}'
+SQLALCHEMY_DATABASE_URL = f'postgresql://postgres:{PSQL_PASSWORD}@{HOST}:5432/{STAGING_DATABASE}'
 print(SQLALCHEMY_DATABASE_URL)
 
 engine = create_engine(
@@ -46,6 +48,26 @@ app.dependency_overrides[get_current_user] = override_get_current_user
 
 client = TestClient(app)
 
-def test_read_all_authenticated():
+
+@pytest.fixture
+def test_todo():
+    todo = Todos(
+        title="Go to sleep",
+        description="Need to rest",
+        priority=5,
+        complete=False,
+        owner_id=1
+    )
+
+    db = TestingSessionLocal()
+    db.add(todo)
+    db.commit()
+    yield todo
+    with engine.connect() as connection:
+        connection.execute(text("DELETE FROM todos"))
+        connection.commit()
+
+def test_read_all_authenticated(test_todo):
     response = client.get('/todos')
     assert response.status_code == status.HTTP_200_OK
+    assert response.json() == []
