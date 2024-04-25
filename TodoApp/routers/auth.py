@@ -2,8 +2,10 @@ from datetime import datetime, timedelta
 from typing import Annotated # for dependency injection
 from fastapi import APIRouter, Depends, HTTPException # for router and dependency injection, raise exception
 from pydantic import BaseModel
+
 from ..database import SessionLocal # get database
 from ..models import Users
+
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session 
 from starlette import status # for status code

@@ -1,12 +1,13 @@
 from typing import Annotated
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
-
-from fastapi import Depends, HTTPException, Path, APIRouter, Request
-from ..models import Todos, Base
 from starlette import status
+from fastapi import Depends, HTTPException, Path, APIRouter, Request
+
+from ..models import Todos, Base
 from .auth import get_current_user
 from ..database import engine, SessionLocal
+
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 

@@ -1,10 +1,10 @@
 from typing import Annotated
 from sqlalchemy.orm import Session
-
+from starlette import status
 from fastapi import Depends, HTTPException, Path, APIRouter
+
 from ..models import Todos
 from ..database import SessionLocal
-from starlette import status
 from .auth import get_current_user
 
 

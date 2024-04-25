@@ -8,9 +8,10 @@ load_dotenv()
 PSQL_PASSWORD=os.getenv("PSQL_PASSWORD")
 HOST=os.getenv("HOST")
 DATABASE=os.getenv("DATABASE")
+print(DATABASE)
 
-SQLALCHEMY_DATABASE_URL = f'postgresql://postgres:{PSQL_PASSWORD}@{HOST}:5432/{DATABASE}'
-
+SQLALCHEMY_DATABASE_URL = f'postgresql+psycopg2://postgres:{PSQL_PASSWORD}@{HOST}:5432/{DATABASE}'
+print(SQLALCHEMY_DATABASE_URL)
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
