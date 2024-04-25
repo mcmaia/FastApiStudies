@@ -56,7 +56,7 @@ def test_todo():
         description="Need to rest",
         priority=5,
         complete=False,
-        owner_id=1
+        owner_id=4
     )
 
     db = TestingSessionLocal()
